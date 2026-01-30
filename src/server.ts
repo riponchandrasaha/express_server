@@ -3,6 +3,7 @@ import config from "./config";
 import initDB, { pool } from "./config/db";
 import logger from "./middleware/logger";
 import { userRoutes } from "./modules/user/user.routes";
+import { todoRoutes } from "./modules/todo/todo.routes";
 
 const app = express();
 const port = config.port;
@@ -24,7 +25,7 @@ app.get("/", logger, (req: Request, res: Response) => {
 app.use("/users", userRoutes);
 
 
-
+/*
 // todos crud
 app.post("/todos", async (req: Request, res: Response) => {
   const { user_id, title } = req.body;
@@ -121,8 +122,8 @@ app.delete("/todos/:id", async (req, res) => {
     console.log(err);
     res.status(500).json({ error: "Failed to delete todo" });
   }
-});
-
+}); */
+app.use("/todos", todoRoutes);
 app.use((req, res) => {
   res.status(404).json({
     success: false,
