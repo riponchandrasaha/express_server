@@ -35,7 +35,9 @@ const registerUser = async (req: Request, res: Response) => {
       data: result.rows[0],
     });
   } catch (err: any) {
-    const status = (err as any)?.code === "EMAIL_EXISTS" ? 400 : 500;
+    const code = (err as any)?.code;
+    const status =
+      code === "EMAIL_EXISTS" || code === "PASSWORD_TOO_SHORT" ? 400 : 500;
     res.status(status).json({
       success: false,
       message: (err as any)?.message ?? "Registration failed",

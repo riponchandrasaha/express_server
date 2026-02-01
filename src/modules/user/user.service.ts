@@ -6,13 +6,20 @@ const USER_PUBLIC_COLUMNS = "id, name, email, phone, role, created_at, updated_a
 
 const createUser = async (payload: Record<string, unknown>) => {
   const { name, email, password, phone, role } = payload;
+  const emailLower = typeof email === "string" ? email.trim().toLowerCase() : "";
+  const pass = typeof password === "string" ? password : "";
+  if (pass.length < 6) {
+    const err = new Error("Password must be at least 6 characters");
+    (err as any).code = "PASSWORD_TOO_SHORT";
+    throw err;
+  }
 
-  const hashedPass = await bcrypt.hash(password as string, 10);
+  const hashedPass = await bcrypt.hash(pass, 10);
 
   const result = await pool.query(
     `INSERT INTO users(name, email, password, phone, role)
      VALUES($1, $2, $3, $4, $5) RETURNING ${USER_PUBLIC_COLUMNS}`,
-    [name, email, hashedPass, phone, role]
+    [name, emailLower, hashedPass, phone, role]
   );
 
   return result;
@@ -44,7 +51,7 @@ const updateUser = async (payload: Record<string, unknown>, id: string) => {
   }
   if (email !== undefined) {
     updates.push(`email = $${paramIndex++}`);
-    values.push(email);
+    values.push(typeof email === "string" ? email.trim().toLowerCase() : email);
   }
   if (phone !== undefined) {
     updates.push(`phone = $${paramIndex++}`);

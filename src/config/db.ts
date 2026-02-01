@@ -9,12 +9,19 @@ export const pool = new Pool({
 });
 
 const initDB = async () => {
-  /* ================= USERS TABLE ================= */
+  /* ================= USERS TABLE =================
+   * id       - Auto-generated
+   * name     - Required
+   * email    - Required, unique, lowercase
+   * password - Required, min 6 characters (validated in app before hash)
+   * phone    - Required
+   * role     - 'admin' or 'customer'
+   */
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
       name VARCHAR(100) NOT NULL,
-      email VARCHAR(150) UNIQUE NOT NULL,
+      email VARCHAR(150) UNIQUE NOT NULL CHECK (email = LOWER(email)),
       password TEXT NOT NULL,
       phone VARCHAR(20) NOT NULL,
       role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'customer')),
@@ -23,7 +30,14 @@ const initDB = async () => {
     );
   `);
 
-  /* ================= VEHICLES TABLE ================= */
+  /* ================= VEHICLES TABLE =================
+   * id                  - Auto-generated
+   * vehicle_name        - Required
+   * type                - 'car', 'bike', 'van', or 'SUV'
+   * registration_number - Required, unique
+   * daily_rent_price     - Required, positive
+   * availability_status - 'available' or 'booked'
+   */
   await pool.query(`
     CREATE TABLE IF NOT EXISTS vehicles (
       id SERIAL PRIMARY KEY,
@@ -38,7 +52,15 @@ const initDB = async () => {
     );
   `);
 
-  /* ================= BOOKINGS TABLE ================= */
+  /* ================= BOOKINGS TABLE =================
+   * id               - Auto-generated
+   * customer_id      - Links to Users table
+   * vehicle_id       - Links to Vehicles table
+   * rent_start_date  - Required
+   * rent_end_date    - Required, must be after start date
+   * total_price      - Required, positive
+   * status           - 'active', 'cancelled' or 'returned'
+   */
   await pool.query(`
     CREATE TABLE IF NOT EXISTS bookings (
       id SERIAL PRIMARY KEY,

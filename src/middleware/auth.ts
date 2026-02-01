@@ -32,9 +32,17 @@ const auth = (...roles: string[]) => {
 
       next();
     } catch (err: any) {
-      res.status(500).json({
+      const isJwtError =
+        err?.name === "JsonWebTokenError" ||
+        err?.name === "TokenExpiredError" ||
+        err?.name === "NotBeforeError";
+      const status = isJwtError ? 401 : 500;
+      const message = isJwtError
+        ? "Unauthorized: invalid or expired token"
+        : err?.message ?? "Internal server error";
+      return res.status(status).json({
         success: false,
-        message: err.message,
+        message,
       });
     }
   };

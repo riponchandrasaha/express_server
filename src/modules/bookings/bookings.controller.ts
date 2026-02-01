@@ -46,13 +46,22 @@ const getSingleBooking = async (req: Request, res: Response) => {
     const result = await bookingServices.getSingleBooking(req.params.bookingId as string, customerId);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, error: "Booking not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
     }
 
-    res.status(200).json({ success: true, data: result.rows[0] });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ success: false, error: "Failed to fetch booking" });
+    res.status(200).json({
+      success: true,
+      message: "Booking fetched successfully",
+      data: result.rows[0],
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: err?.message ?? "Failed to fetch booking",
+    });
   }
 };
 
@@ -66,18 +75,24 @@ const updateBooking = async (req: Request, res: Response) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, error: "Booking not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
     }
 
-    res.status(200).json({ success: true, data: result.rows[0] });
+    res.status(200).json({
+      success: true,
+      message: "Booking updated successfully",
+      data: result.rows[0],
+    });
   } catch (err: any) {
-    console.log(err);
     const code = err?.code;
     const status =
       code === "CUSTOMER_CAN_ONLY_CANCEL" || code === "CANCEL_ONLY_BEFORE_START" ? 400 : 500;
     res.status(status).json({
       success: false,
-      error: err?.message ?? "Failed to update booking",
+      message: err?.message ?? "Failed to update booking",
     });
   }
 };
@@ -88,13 +103,22 @@ const deleteBooking = async (req: Request, res: Response) => {
     const result = await bookingServices.deleteBooking(req.params.bookingId as string, customerId);
 
     if (result.rowCount === 0) {
-      return res.status(404).json({ success: false, error: "Booking not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
     }
 
-    res.status(200).json({ success: true, message: "Booking deleted", data: null });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ success: false, error: "Failed to delete booking" });
+    res.status(200).json({
+      success: true,
+      message: "Booking deleted successfully",
+      data: null,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: err?.message ?? "Failed to delete booking",
+    });
   }
 };
 

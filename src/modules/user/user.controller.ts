@@ -12,8 +12,8 @@ const createUser = async (req: Request, res: Response) => {
       data: result.rows[0],
     });
   } catch (err: any) {
-    console.log(err);
-    res.status(500).json({
+    const status = err?.code === "PASSWORD_TOO_SHORT" ? 400 : 500;
+    res.status(status).json({
       success: false,
       message: err.message,
     });
