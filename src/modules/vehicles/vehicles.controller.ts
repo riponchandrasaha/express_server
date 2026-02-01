@@ -1,3 +1,4 @@
+/** Controller layer: request/response handling; delegates to service. */
 import { Request, Response } from "express";
 import { vehicleServices } from "./vehicles.service";
 
@@ -37,7 +38,7 @@ const getVehicles = async (req: Request, res: Response) => {
 
 const getSingleVehicle = async (req: Request, res: Response) => {
   try {
-    const result = await vehicleServices.getSingleVehicle(req.params.id as string);
+    const result = await vehicleServices.getSingleVehicle(req.params.vehicleId as string);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Vehicle not found" });
@@ -52,7 +53,7 @@ const getSingleVehicle = async (req: Request, res: Response) => {
 
 const updateVehicle = async (req: Request, res: Response) => {
   try {
-    const result = await vehicleServices.updateVehicle(req.body, req.params.id as string);
+    const result = await vehicleServices.updateVehicle(req.body, req.params.vehicleId as string);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Vehicle not found" });
@@ -67,7 +68,7 @@ const updateVehicle = async (req: Request, res: Response) => {
 
 const deleteVehicle = async (req: Request, res: Response) => {
   try {
-    const result = await vehicleServices.deleteVehicle(req.params.id as string);
+    const result = await vehicleServices.deleteVehicle(req.params.vehicleId as string);
 
     if (result.rowCount === 0) {
       return res.status(404).json({ error: "Vehicle not found" });

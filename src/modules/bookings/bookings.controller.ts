@@ -1,9 +1,12 @@
+/** Controller layer: request/response handling; delegates to service. */
 import { Request, Response } from "express";
 import { bookingServices } from "./bookings.service";
 
 const createBooking = async (req: Request, res: Response) => {
   try {
-    const result = await bookingServices.createBooking(req.body);
+    const userId = req.user?.id as string | undefined;
+    const role = req.user?.role as string | undefined;
+    const result = await bookingServices.createBooking(req.body, userId, role);
 
     res.status(201).json({
       success: true,
@@ -11,16 +14,18 @@ const createBooking = async (req: Request, res: Response) => {
       data: result.rows[0],
     });
   } catch (err: any) {
-    res.status(500).json({
+    const status = err?.code === "CUSTOMER_ID_REQUIRED" || err?.code === "VEHICLE_NOT_FOUND" ? 400 : 500;
+    res.status(status).json({
       success: false,
-      message: err.message,
+      message: err?.message ?? "Failed to create booking",
     });
   }
 };
 
 const getBookings = async (req: Request, res: Response) => {
   try {
-    const result = await bookingServices.getBookings();
+    const customerId = req.user?.role === "customer" ? (req.user.id as string) : undefined;
+    const result = await bookingServices.getBookings(customerId);
 
     res.status(200).json({
       success: true,
@@ -37,46 +42,59 @@ const getBookings = async (req: Request, res: Response) => {
 
 const getSingleBooking = async (req: Request, res: Response) => {
   try {
-    const result = await bookingServices.getSingleBooking(req.params.id as string);
+    const customerId = req.user?.role === "customer" ? (req.user.id as string) : undefined;
+    const result = await bookingServices.getSingleBooking(req.params.bookingId as string, customerId);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Booking not found" });
+      return res.status(404).json({ success: false, error: "Booking not found" });
     }
 
-    res.json(result.rows[0]);
+    res.status(200).json({ success: true, data: result.rows[0] });
   } catch (err) {
     console.log(err);
-    res.status(500).json({ error: "Failed to fetch booking" });
+    res.status(500).json({ success: false, error: "Failed to fetch booking" });
   }
 };
 
 const updateBooking = async (req: Request, res: Response) => {
   try {
-    const result = await bookingServices.updateBooking(req.body, req.params.id as string);
+    const customerId = req.user?.role === "customer" ? (req.user.id as string) : undefined;
+    const result = await bookingServices.updateBooking(
+      req.body,
+      req.params.bookingId as string,
+      customerId
+    );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Booking not found" });
+      return res.status(404).json({ success: false, error: "Booking not found" });
     }
 
-    res.json(result.rows[0]);
-  } catch (err) {
+    res.status(200).json({ success: true, data: result.rows[0] });
+  } catch (err: any) {
     console.log(err);
-    res.status(500).json({ error: "Failed to update booking" });
+    const code = err?.code;
+    const status =
+      code === "CUSTOMER_CAN_ONLY_CANCEL" || code === "CANCEL_ONLY_BEFORE_START" ? 400 : 500;
+    res.status(status).json({
+      success: false,
+      error: err?.message ?? "Failed to update booking",
+    });
   }
 };
 
 const deleteBooking = async (req: Request, res: Response) => {
   try {
-    const result = await bookingServices.deleteBooking(req.params.id as string);
+    const customerId = req.user?.role === "customer" ? (req.user.id as string) : undefined;
+    const result = await bookingServices.deleteBooking(req.params.bookingId as string, customerId);
 
     if (result.rowCount === 0) {
-      return res.status(404).json({ error: "Booking not found" });
+      return res.status(404).json({ success: false, error: "Booking not found" });
     }
 
-    res.json({ success: true, message: "Booking deleted", data: null });
+    res.status(200).json({ success: true, message: "Booking deleted", data: null });
   } catch (err) {
     console.log(err);
-    res.status(500).json({ error: "Failed to delete booking" });
+    res.status(500).json({ success: false, error: "Failed to delete booking" });
   }
 };
 

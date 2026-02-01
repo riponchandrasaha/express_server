@@ -1,3 +1,4 @@
+/** Service layer: business logic and data access; no Express coupling. */
 import { pool } from "../../config/db";
 
 const createVehicle = async (payload: Record<string, unknown>) => {

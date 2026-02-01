@@ -1,3 +1,4 @@
+/** Service layer: business logic and data access; no Express coupling. */
 import { pool } from "../../config/db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -23,7 +24,7 @@ const loginUser = async (email: string, password: string) => {
   }
 
   const token = jwt.sign(
-    { name: user.name, email: user.email, role: user.role },
+    { id: user.id, name: user.name, email: user.email, role: user.role },
     config.jwtSecret as string,
     {
       expiresIn: "7d",
@@ -31,9 +32,36 @@ const loginUser = async (email: string, password: string) => {
   );
   console.log({ token });
 
-  return { token, user };
+  const safeUser = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+  };
+  return { token, user: safeUser };
+};
+
+const registerUser = async (payload: Record<string, unknown>) => {
+  const { name, email, password, phone } = payload;
+
+  const existing = await pool.query(`SELECT id FROM users WHERE email = $1`, [email]);
+  if (existing.rows.length > 0) {
+    const err = new Error("Email already registered");
+    (err as any).code = "EMAIL_EXISTS";
+    throw err;
+  }
+
+  const hashedPass = await bcrypt.hash(password as string, 10);
+  const result = await pool.query(
+    `INSERT INTO users(name, email, password, phone, role)
+     VALUES($1, $2, $3, $4, 'customer') RETURNING id, name, email, phone, role`,
+    [name, email, hashedPass, phone ?? null]
+  );
+  return result;
 };
 
 export const authServices = {
   loginUser,
+  registerUser,
 };

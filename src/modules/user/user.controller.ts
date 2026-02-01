@@ -1,3 +1,4 @@
+/** Controller layer: request/response handling; delegates to service. */
 import { Request, Response } from "express";
 import { userServices } from "./user.service";
 
@@ -38,7 +39,13 @@ const getUser = async (req: Request, res: Response) => {
 
 const getSingleUser = async (req: Request, res: Response) => {
   try {
-    const result = await userServices.getSingleUser(req.params.id as string);
+    if (req.user?.role === "customer" && req.params.userId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: you can only view your own profile",
+      });
+    }
+    const result = await userServices.getSingleUser(req.params.userId as string);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -62,7 +69,13 @@ const getSingleUser = async (req: Request, res: Response) => {
 
 const updateUser = async (req: Request, res: Response) => {
   try {
-    const result = await userServices.updateUser(req.body, req.params.id as string);
+    if (req.user?.role === "customer" && req.params.userId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: you can only update your own profile",
+      });
+    }
+    const result = await userServices.updateUser(req.body, req.params.userId as string);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -86,7 +99,7 @@ const updateUser = async (req: Request, res: Response) => {
 
 const deleteUser = async (req: Request, res: Response) => {
   try {
-    const result = await userServices.deleteUser(req.params.id as string);
+    const result = await userServices.deleteUser(req.params.userId as string);
 
     if (result.rowCount === 0) {
       return res.status(404).json({

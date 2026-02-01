@@ -1,5 +1,8 @@
+/** Service layer: business logic and data access; no Express coupling. */
 import { pool } from "../../config/db";
 import bcrypt from "bcryptjs";
+
+const USER_PUBLIC_COLUMNS = "id, name, email, phone, role, created_at, updated_at";
 
 const createUser = async (payload: Record<string, unknown>) => {
   const { name, email, password, phone, role } = payload;
@@ -8,7 +11,7 @@ const createUser = async (payload: Record<string, unknown>) => {
 
   const result = await pool.query(
     `INSERT INTO users(name, email, password, phone, role)
-     VALUES($1, $2, $3, $4, $5) RETURNING *`,
+     VALUES($1, $2, $3, $4, $5) RETURNING ${USER_PUBLIC_COLUMNS}`,
     [name, email, hashedPass, phone, role]
   );
 
@@ -16,12 +19,15 @@ const createUser = async (payload: Record<string, unknown>) => {
 };
 
 const getUser = async () => {
-  const result = await pool.query(`SELECT * FROM users`);
+  const result = await pool.query(`SELECT ${USER_PUBLIC_COLUMNS} FROM users`);
   return result;
 };
 
 const getSingleUser = async (id: string) => {
-  const result = await pool.query(`SELECT * FROM users WHERE id = $1`, [id]);
+  const result = await pool.query(
+    `SELECT ${USER_PUBLIC_COLUMNS} FROM users WHERE id = $1`,
+    [id]
+  );
   return result;
 };
 
@@ -55,7 +61,10 @@ const updateUser = async (payload: Record<string, unknown>, id: string) => {
   }
 
   if (updates.length === 0) {
-    const result = await pool.query(`SELECT * FROM users WHERE id = $1`, [id]);
+    const result = await pool.query(
+      `SELECT ${USER_PUBLIC_COLUMNS} FROM users WHERE id = $1`,
+      [id]
+    );
     return result;
   }
 
@@ -63,7 +72,7 @@ const updateUser = async (payload: Record<string, unknown>, id: string) => {
   values.push(id);
 
   const result = await pool.query(
-    `UPDATE users SET ${updates.join(", ")} WHERE id = $${paramIndex} RETURNING *`,
+    `UPDATE users SET ${updates.join(", ")} WHERE id = $${paramIndex} RETURNING ${USER_PUBLIC_COLUMNS}`,
     values
   );
 
@@ -80,7 +89,10 @@ const deleteUser = async (id: string) => {
     (err as any).code = "ACTIVE_BOOKINGS";
     throw err;
   }
-  const result = await pool.query(`DELETE FROM users WHERE id = $1 RETURNING *`, [id]);
+  const result = await pool.query(
+    `DELETE FROM users WHERE id = $1 RETURNING ${USER_PUBLIC_COLUMNS}`,
+    [id]
+  );
   return result;
 };
 
